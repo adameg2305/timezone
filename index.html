@@ -1,0 +1,125 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<title>What is my Timezone?</title>
+</head>
+
+<body>
+
+	<div class="text">
+		<h1>Your Timezone is:</h1>
+		<noscript>Please enable JavaScript.</noscript>
+		<h2 id="gmt">.</h2>
+		<h4 id="name">.</h4>
+		<button onclick="timeZoneFromLocation()" id="geobutton">Get timezone from your location.</button>
+	</div>
+</body>
+<style>
+	@import url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+
+	body,
+	html {
+		height: 90%;
+		display: grid;
+		font-family: 'Roboto', sans-serif;
+	}
+
+	.text {
+		margin: auto;
+		text-align: center;
+	}
+
+	button {
+		padding: 10px;
+		background: #001f3f;
+		color: white;
+	}
+</style>
+<script>
+	function getByBrowser() {
+		var gmt = new Date().toTimeString().slice(9).split(' ')[0];
+		var name = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		document.getElementById('gmt').innerText = gmt;
+		document.getElementById('name').innerText = name.replace('_', ' ');
+	}
+
+	function timeZoneFromLocation() {
+		document.getElementById('gmt').innerText = 'Detecting...';
+		document.getElementById('name').innerText = 'Please wait...';
+		if (navigator.geolocation) {
+			navigator.geolocation.getCurrentPosition(showPosition, showError);
+		} else {
+			document.getElementById('geobutton').disabled = true;
+			document.getElementById('geobutton').innerText = 'Your device does not\nsupport geolocation.';
+			getByBrowser();
+		}
+	}
+
+	function showPosition(position) {
+		try {
+			var data = JSON.parse(httpGet('https://secure.geonames.org/timezoneJSON?lat=' + position.coords.latitude + '&lng=' + position.coords.longitude + '&username=noahvdaa'));
+			if (typeof (data.status) !== 'undefined') {
+				document.getElementById('geobutton').disabled = true;
+				document.getElementById('geobutton').innerText = 'Something went wrong,\nplease try again later.';
+				getByBrowser();
+				return;
+			}
+			var options = {
+				timeZone: data.timezoneId,
+				year: 'numeric', month: 'numeric', day: 'numeric',
+				hour: 'numeric', minute: 'numeric', second: 'numeric',
+			}
+			var gmt = (new Date()).toLocaleString([], options).DateTimeFormat().resolvedOptions().timeZone;
+			var name = data.timezoneId;
+			document.getElementById('gmt').innerText = gmt;
+			document.getElementById('name').innerText = name.replace('_', ' ');
+			document.getElementById('geobutton').remove();
+		} catch (e) {
+			document.getElementById('geobutton').disabled = true;
+			document.getElementById('geobutton').innerText = 'Something went wrong,\nplease try again later.';
+			return;
+		}
+	}
+
+	function showError(error) {
+		var msg = '';
+		switch (error.code) {
+			case error.PERMISSION_DENIED:
+				msg = 'You denied the request\nfor geolocation.';
+				break;
+			case error.POSITION_UNAVAILABLE:
+				msg = 'Failed to fetch your location.';
+				break;
+			case error.TIMEOUT:
+				msg = 'The geolocation request\ntimed out.';
+				break;
+			case error.UNKNOWN_ERROR:
+				msg = 'An unknown error occured.';
+				break;
+		}
+		document.getElementById('geobutton').innerText = msg;
+	}
+
+	function httpGet(url) {
+		var xmlHttp = new XMLHttpRequest();
+		xmlHttp.open('GET', url, false);
+		xmlHttp.send(null);
+		return xmlHttp.responseText;
+	}
+
+	getByBrowser();
+</script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-128990208-4"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag() { dataLayer.push(arguments); }
+	gtag('js', new Date());
+
+	gtag('config', 'UA-128990208-4');
+</script>
+
+
+</html>
